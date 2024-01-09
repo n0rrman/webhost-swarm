@@ -11,8 +11,8 @@ services:
         - "traefik.http.routers.$WEBSITE_SERVICE.entrypoints=websecure"
         - "traefik.http.routers.$WEBSITE_SERVICE.tls.certresolver=letsencrypt"
     networks:
-      - traefik_webhost-swarm
+      - webhost_swarm-network
 
 networks:
-  traefik_webhost-swarm:
+  webhost_swarm-network:
     external: true
