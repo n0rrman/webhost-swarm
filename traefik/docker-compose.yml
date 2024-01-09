@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.swarmMode=true"
+      - "--providers.docker.exposedbydefault=false"
+
+      # HTTPS
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+
+      # LET'S ENCRYPT
+      - "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=$WEBHOST_EMAIL"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+
+      # LOGS
+      - "--log=true"
+      - "--log.format=json"
+      - "--log.filepath=logs/traefik.log"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+      - "--accesslog.filepath=logs/access.log"
+      - "--accesslog.bufferingsize=500"
+
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - "../letsencrypt:/letsencrypt"
+      - "../logs:/logs"
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - webhost-swarm
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  webhost-swarm:
+    driver: overlay
